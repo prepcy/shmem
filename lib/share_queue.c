@@ -36,7 +36,7 @@ void *create_shared_memory(char *file, int size)
 share_queue_t *alloc_share_queue(int flag, char* share_file, char* free_sem_key, char* valid_sem_key,
 										int count, int frame_size, int struct_size)
 {
-	int i;
+	int i, offset = 0;
 	share_queue_t *share_queue = NULL;
 	int frame_len =  frame_size + struct_size;
 
@@ -61,13 +61,15 @@ share_queue_t *alloc_share_queue(int flag, char* share_file, char* free_sem_key,
 
 	/* 创建共享内存，最开始是2个原子变量，后面就是 count x frame_len 数据缓冲区 */
 	char *data_tmp = create_shared_memory(share_file, frame_len * count + 2*sizeof(atomic_int));
-	share_queue->free_index = (atomic_int*)data_tmp;
-	share_queue->proc_index = (atomic_int*)data_tmp + 1;
-	share_queue->data_ptr = data_tmp + 2*sizeof(atomic_int);
+	share_queue->free_index = (atomic_int*)(data_tmp + offset);
+	offset += sizeof(atomic_int);
+	share_queue->proc_index = (atomic_int*)(data_tmp + offset);
+	offset += sizeof(atomic_int);
+	share_queue->data_ptr = (unsigned char*)(data_tmp + offset);
 	share_queue->total_count = count;
 
 	if (flag == SHARE_MASTER) {
-		memset(data_tmp, 0, sizeof(char) * (frame_len * count + 2*sizeof(atomic_int)));
+		memset(data_tmp, 0, sizeof(char) * (frame_len * count + offset));
 		atomic_init(share_queue->free_index, 0);
 		atomic_init(share_queue->proc_index, 0);
 	}
@@ -77,7 +79,6 @@ share_queue_t *alloc_share_queue(int flag, char* share_file, char* free_sem_key,
 	for (i = 0; i < count; i++) {
 		share_queue->share_frames[i].data = share_queue->data_ptr + frame_len * i;
 	}
-
 
 	/* 初始化有效帧对应信号量为0，表示已接收到帧数为0 */
 	share_queue->valid_frame_sem = sem_open(valid_sem_key, O_CREAT, 0666, 0);
@@ -128,11 +129,10 @@ void share_free_frame_wait_dec(share_queue_t *share_queue)
 
 void *wait_free_share_frame(share_queue_t *share_queue)
 {
-	unsigned int get_index;
 	/* 等待、递减信号量 */
 	share_free_frame_wait_dec(share_queue);
 
-	get_index = atomic_load(share_queue->free_index);
+	unsigned int get_index = atomic_load(share_queue->free_index);
 	atomic_fetch_add(share_queue->free_index, 1);
 
 	/* 处理队列环回 */
@@ -144,12 +144,10 @@ void *wait_free_share_frame(share_queue_t *share_queue)
 
 void *wait_proc_share_frame(share_queue_t *share_queue)
 {
-	unsigned int get_index;
-
 	/* 等待、递减信号量 */
 	share_used_frame_wait_dec(share_queue);
 
-	get_index = atomic_load(share_queue->proc_index);
+	unsigned int get_index = atomic_load(share_queue->proc_index);
 	atomic_fetch_add(share_queue->proc_index, 1);
 
 	/* 处理队列环回 */

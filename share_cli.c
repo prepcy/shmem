@@ -13,14 +13,12 @@ void main(void)
 	uint8_t *data;
 	share_queue_t *queue = alloc_share_queue(SHARE_SLAVE, SHARE_FILE, FREE_SEM, VALID_SEM,
 							SHARE_COUNT, SHARE_SIZE, sizeof(share_frame_t));
-
 	timer_init();
 
 	// 发送端
 	while(1) {
 		if (info.send_count >= 10000000)
-			while(1);
-			//sleep(100);
+			while(1) sleep(1);
 		share_mem = wait_free_share_frame(queue);
 
 		//__printf("get sem \n");
