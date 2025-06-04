@@ -3,7 +3,7 @@
 
 info_t info;
 
-void main(void)
+int main(void)
 {
 	char tmp[1600] = {0xff};
 	share_frame_t *share_frame;
@@ -36,5 +36,5 @@ void main(void)
 		//__printf("send sem \n");
 	}
 
-
+	return 0;
 }

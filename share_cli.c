@@ -5,9 +5,8 @@
 
 info_t info;
 
-void main(void)
+int main(void)
 {
-	char tmp[1600] = {0xff};
 	share_frame_t *share_frame;
 	share_mem_t *share_mem;
 	uint8_t *data;
@@ -38,5 +37,6 @@ void main(void)
 		//__printf("send sem \n");
 	}
 
+	return 0;
 }
 

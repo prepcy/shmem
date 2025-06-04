@@ -136,7 +136,7 @@ void *wait_free_share_frame(share_queue_t *share_queue)
 	atomic_fetch_add(share_queue->free_index, 1);
 
 	/* 处理队列环回 */
-	if (atomic_load(share_queue->free_index) >= share_queue->total_count)
+	if ((size_t)atomic_load(share_queue->free_index) >= share_queue->total_count)
 		atomic_store(share_queue->free_index, 0);
 
 	return &share_queue->share_frames[get_index];
@@ -151,7 +151,7 @@ void *wait_proc_share_frame(share_queue_t *share_queue)
 	atomic_fetch_add(share_queue->proc_index, 1);
 
 	/* 处理队列环回 */
-	if (atomic_load(share_queue->proc_index) >= share_queue->total_count)
+	if ((size_t)atomic_load(share_queue->proc_index) >= share_queue->total_count)
 		atomic_store(share_queue->proc_index, 0);
 
 	return &share_queue->share_frames[get_index];

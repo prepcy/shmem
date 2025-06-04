@@ -17,7 +17,7 @@ void show_hex(uint8_t *data, int32_t len)
 }
 
 extern info_t info;
-static void timer_callback(int signum)
+static void timer_callback(int signum __attribute__((unused)))
 {
 	static long long int send_t = 0;
 	static long long int recv_t = 0;
