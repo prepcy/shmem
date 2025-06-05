@@ -1,2 +1,4 @@
 *.o
 *.d
+share_cli
+share_ser
