@@ -1,7 +1,7 @@
 TARGET_CLI = share_cli
 TARGET_SER = share_ser
 
-PRIV_CFLAGS += -I./lib/ -I./ -MMD -MP -Wall -Wextra
+PRIV_CFLAGS += -I./lib/ -I./ -MMD -MP -Wall -Wextra -g
 PRIV_LDFLAGS += -lpthread -lrt
 SRCS = $(wildcard ./lib/*.c) share_utils.c
 OBJS=$(SRCS:.c=.o)
