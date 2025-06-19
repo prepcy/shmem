@@ -14,9 +14,14 @@ int main(void)
 
 	// 接收端
 	while(1) {
+#if 0
 		len = recv_share_frame(queue, data, 1600);
-
 		if ( (len == 1500) && (data[0] == 0x45) ) {
+#else
+		uint8_t *data_ptr = NULL;
+		len = recv_share_frame_with_ptr(queue, &data_ptr, 1600);
+		if ( (len == 1500) && (data_ptr[0] == 0x45) ) {
+#endif
 			info.recv_count++;
 			info.recv_len += len;
 		}

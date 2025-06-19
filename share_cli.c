@@ -19,10 +19,15 @@ int main(void)
 
 	// 发送端
 	while(1) {
-		if (info.send_count >= 10000000)
+		if (info.send_count >= 100000000)
 			while(1) sleep(1);
-
+#if 0
 		uint32_t len = send_share_frame(queue, data, SIZE);
+#else
+		uint8_t *data_ptr = get_send_share_buff(queue);
+		data_ptr[0] = 0x45;
+		uint32_t len = send_share_frame_with_ptr(queue, SIZE);
+#endif
 		info.send_count++;
 		info.send_len += len;
 	}
