@@ -12,17 +12,10 @@
 #include <stdint.h>
 
 #define SHARE_COUNT 1024
-#define SHARE_SIZE 1600
+#define SHARE_SIZE (32 * 1024)
 #define SHARE_FILE	"/share_mem"
 #define FREE_SEM	"/share_sem_free"
 #define VALID_SEM	"/share_sem_valid"
-
-#pragma pack(1)
-typedef struct {
-	uint8_t		flag;
-	uint16_t	len;
-} share_frame_t;
-#pragma pack()
 
 typedef struct {
 	long send_count;
