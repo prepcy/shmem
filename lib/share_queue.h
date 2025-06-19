@@ -50,5 +50,29 @@ void free_share_queue(share_queue_t *share_queue);
 uint32_t send_share_frame(share_queue_t *share_queue, uint8_t *data, uint32_t len);
 uint32_t recv_share_frame(share_queue_t *share_queue, uint8_t *data, uint32_t len);
 
+/**
+ * 获取发送共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ * @return 缓冲区地址
+ */
+uint8_t * get_send_share_buff(share_queue_t *share_queue);
+
+/**
+ * 发送共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ * @param len 数据长度
+ * @return 数据长度
+ */
+uint32_t send_share_frame_with_ptr(share_queue_t *share_queue, uint32_t len);
+
+/**
+ * 接收共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ * @param data 数据地址
+ * @param len 数据长度
+ * @return 数据长度
+ */
+uint32_t recv_share_frame_with_ptr(share_queue_t *share_queue, uint8_t **data, uint32_t len __attribute__((unused)));
+
 #endif
 

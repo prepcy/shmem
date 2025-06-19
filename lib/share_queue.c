@@ -13,10 +13,9 @@
 #define XDMA_DMA_MEM_ALIGN 4096
 
 /**
- * @brief 计算大于等于(n/100)的最小2次幂
- *
+ * 计算大于等于(n/100)的最小2次幂
  * @param n 输入参数
- * @return unsigned int 结果
+ * @return 结果
  */
 static unsigned int ceil_power_of_two(int n) {
     // 处理特殊值：当n<=0时，2^0=1是最小的2次幂
@@ -49,6 +48,11 @@ static unsigned int ceil_power_of_two(int n) {
     return val;
 }
 
+/**
+ * 将大小对齐到DMA内存对齐大小
+ * @param size 大小
+ * @return 对齐后的大小
+ */
 static int size_align_to_dma(int size)
 {
 	int div, mod;
@@ -63,7 +67,12 @@ static int size_align_to_dma(int size)
 		return div * XDMA_DMA_MEM_ALIGN;
 }
 
-// 创建共享内存
+/**
+ * 创建共享内存
+ * @param file 共享文件
+ * @param size 共享内存大小
+ * @return 共享内存地址
+ */
 void *create_shared_memory(char *file, int size)
 {
 	int shm_fd = shm_open(file, O_CREAT | O_RDWR, 0666);
@@ -86,6 +95,16 @@ void *create_shared_memory(char *file, int size)
 	return shm_ptr;
 }
 
+/**
+ * 分配共享内存队列
+ * @param flag 标志
+ * @param share_file 共享文件
+ * @param free_sem_key 空闲信号量
+ * @param valid_sem_key 有效信号量
+ * @param count 帧数
+ * @param frame_size 帧大小
+ * @return 共享内存队列
+ */
 share_queue_t *alloc_share_queue(int flag, char* share_file, char* free_sem_key, char* valid_sem_key,
 										int count, int frame_size)
 {
@@ -183,6 +202,10 @@ share_queue_t *alloc_share_queue(int flag, char* share_file, char* free_sem_key,
 	return share_queue;
 }
 
+/**
+ * 释放共享内存队列
+ * @param share_queue 共享内存队列
+ */
 void free_share_queue(share_queue_t *share_queue)
 {
 	if (share_queue) {
@@ -193,26 +216,48 @@ void free_share_queue(share_queue_t *share_queue)
 	}
 }
 
+/**
+ * 增加已使用共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ */
 void share_used_frame_inc(share_queue_t *share_queue)
 {
 	sem_post(share_queue->valid_frame_sem);
 }
 
+/**
+ * 等待已使用共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ */
 void share_used_frame_wait_dec(share_queue_t *share_queue)
 {
 	sem_wait(share_queue->valid_frame_sem);
 }
 
+/**
+ * 增加空闲共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ */
 void share_free_frame_inc(share_queue_t *share_queue)
 {
 	sem_post(share_queue->free_frame_sem);
 }
 
+/**
+ * 等待空闲共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ * @return 缓冲区地址
+ */
 void share_free_frame_wait_dec(share_queue_t *share_queue)
 {
 	sem_wait(share_queue->free_frame_sem);
 }
 
+/**
+ * 等待空闲共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ * @return 缓冲区地址
+ */
 void *wait_free_share_frame(share_queue_t *share_queue)
 {
 	/* 等待、递减信号量 */
@@ -228,6 +273,11 @@ void *wait_free_share_frame(share_queue_t *share_queue)
 	return &share_queue->share_frames[get_index];
 }
 
+/**
+ * 等待接收共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ * @return 缓冲区地址
+ */
 void *wait_proc_share_frame(share_queue_t *share_queue)
 {
 	/* 等待、递减信号量 */
@@ -243,7 +293,13 @@ void *wait_proc_share_frame(share_queue_t *share_queue)
 	return &share_queue->share_frames[get_index];
 }
 
-
+/**
+ * 发送共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ * @param data 数据地址
+ * @param len 数据长度
+ * @return 数据长度
+ */
 uint32_t send_share_frame(share_queue_t *share_queue, uint8_t *data, uint32_t len)
 {
 	static share_mem_t *share_mem = NULL;
@@ -277,6 +333,13 @@ uint32_t send_share_frame(share_queue_t *share_queue, uint8_t *data, uint32_t le
 	return len;
 }
 
+/**
+ * 接收共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ * @param data 数据地址
+ * @param len 数据长度
+ * @return 数据长度
+ */
 uint32_t recv_share_frame(share_queue_t *share_queue, uint8_t *data, uint32_t len __attribute__((unused)))
 {
 	static share_mem_t *share_mem = NULL;
@@ -290,6 +353,88 @@ uint32_t recv_share_frame(share_queue_t *share_queue, uint8_t *data, uint32_t le
 
 	/* 获取数据 */
 	memcpy(data, share_mem->data + table_len, table_len);
+
+	/* 如果table的索引大于table的个数，则需要切换帧 */
+	if (index >= *share_mem->table_index) {
+		share_free_frame_inc(share_queue);
+		*share_mem->table_index = 0;
+		memset(share_mem->data, 0, share_queue->buff_size);
+		share_mem = NULL;
+		index = 0;
+	}
+
+	return table_len;
+}
+
+
+
+
+
+
+
+/**
+ * 获取发送共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ * @return 缓冲区地址
+ */
+static uint32_t total_len = 0;
+static share_mem_t *share_mem = NULL;
+uint8_t * get_send_share_buff(share_queue_t *share_queue)
+{
+	if (!share_mem) {
+		share_mem = wait_free_share_frame(share_queue);
+		*share_mem->table_index = 0;
+	}
+
+	return share_mem->data + total_len;
+}
+
+/**
+ * 发送共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ * @param len 数据长度
+ * @return 数据长度
+ */
+uint32_t send_share_frame_with_ptr(share_queue_t *share_queue, uint32_t len)
+{
+	/* 存放table */
+	share_mem->table[*share_mem->table_index] = len;
+
+	/* 存放table的索引 */
+	(*share_mem->table_index)++;
+
+	total_len += len;
+
+	/* 如果数据长度大于32k，则需要切换帧 */
+	if (total_len + 1600 >= share_queue->buff_size) {
+		share_used_frame_inc(share_queue);
+		total_len = 0;
+		share_mem = NULL;
+	}
+
+	return len;
+}
+
+/**
+ * 接收共享内存的缓冲区
+ * @param share_queue 共享内存队列
+ * @param data 数据地址
+ * @param len 数据长度
+ * @return 数据长度
+ */
+uint32_t recv_share_frame_with_ptr(share_queue_t *share_queue, uint8_t **data, uint32_t len __attribute__((unused)))
+{
+	static share_mem_t *share_mem = NULL;
+	static uint32_t index = 0;
+
+	if (!share_mem)
+		share_mem = wait_proc_share_frame(share_queue);
+
+	/* 获取table的长度 */
+	uint32_t table_len = share_mem->table[index++];
+
+	/* 获取数据 */
+	*data = (uint8_t*)(&share_mem->data[table_len]);
 
 	/* 如果table的索引大于table的个数，则需要切换帧 */
 	if (index >= *share_mem->table_index) {
