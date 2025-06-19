@@ -1,0 +1,17 @@
+{
+    "editor.fontSize": 20,
+    "files.associations": {
+	},
+	"search.exclude": {
+        "**/*.o": true,
+        "**/*.d": true,
+        "**/*.a": true,
+        "**/*.so": true
+    },
+    "files.exclude": {
+        "**/*.o": true,
+        "**/*.d": true,
+        "**/*.a": true,
+        "**/*.so": true
+    }
+}
