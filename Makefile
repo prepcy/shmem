@@ -22,6 +22,6 @@ $(TARGET_SER): $(OBJS) share_ser.o
 	$(CC) -c $(PRIV_CFLAGS) $< -o $@
 
 clean:
-	rm -rf $(TARGET_CLI) $(TARGET_SER) $(OBJS) $(DEPS) share_cli.o share_ser.o
+	rm -rf $(TARGET_CLI) $(TARGET_SER) $(OBJS) $(DEPS) share_cli.o share_ser.o share_cli.d share_ser.d
 
 -include $(DEPS)
