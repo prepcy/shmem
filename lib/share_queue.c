@@ -294,6 +294,7 @@ uint32_t recv_share_frame(share_queue_t *share_queue, uint8_t *data, uint32_t le
 	/* 如果table的索引大于table的个数，则需要切换帧 */
 	if (index >= *share_mem->table_index) {
 		share_free_frame_inc(share_queue);
+		*share_mem->table_index = 0;
 		share_mem = NULL;
 		index = 0;
 	}
